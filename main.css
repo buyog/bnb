@@ -1,0 +1,47 @@
+html, body { background: #F7FFF7; margin: 0; padding: 0; }
+* {
+    -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
+}
+.main {
+    padding: 0; margin: 0 auto;
+    width: 320px;
+}
+.game {
+    border-width: 0;
+    position: relative;
+    width: 320px;
+}
+
+.canvas, #overlay {
+    position: absolute;
+    top: 0;
+}
+
+.canvas {
+    border: 1px solid #CDC;
+    width: 320px; height: 240px;
+}
+#overlay {
+    border: 1px solid #CDC;
+    width: 320px; height: 240px;
+    background-color: transparent;
+    color: white;
+    font: 24px 'GeometrySoftProBoldN', Arial, sans-serif;
+
+    pointer-events: none;
+    /* pointer-events: auto; */
+`       }
+canvas p, #overlay {
+    text-align: center;
+}
+
+#overlay p { display: none; }
+
+#overlay.intro { background-color: rgb(73,195,79); }
+#overlayz.intro .banner_0 { padding-top: 80px; display: inherit; }
+#overlayz.title .banner_1 { padding-top: 140px; display: inherit; }
+#overlayz.play  .banner_2 { padding-top: 68px; font-size: 32px; display: inherit; }
+
+#info { display: none; }
