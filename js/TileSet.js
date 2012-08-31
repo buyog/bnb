@@ -25,31 +25,11 @@ define(
             return grid;
         }
 
-        var _tileStyles = [
-            'red',
-            'orange',
-            'yellow',
-            'green',
-            'blue',
-            'purple',
-            'silver',
-            'pink'
-        ];
-        /*var _tileFruits = [
-            'strawberry',
-            'cherry',
-            'orange',
-            'lemon',
-            'apple',
-            'mulberry',
-            'grape'
-        ];*/
-
         function printTileArray(ar) {
             // dumps an array of tiles to a human-readable string
             var s = [];
             for (var i=0; i<ar.length; i++) {
-                s.push(_tileStyles[ar[i].color]);
+                s.push(ar[i].toString());
             }
 
             return s.join(',');
@@ -65,8 +45,8 @@ define(
             var _w  = width || 8,
                 _h  = height || 8,
                 _ar = initGrid(_w, _h),
-                _x0 = 66,
-                _y0 = 26;
+                _x0 = 67,
+                _y0 = 24;
 
             function _tick() {
                 // TODO: check for new matches
@@ -180,16 +160,14 @@ define(
             }
 
             function _render(ctx) {
-                var x,y, sx, dx = 0, dy = 0, tiles = game.assets.getAsset('berries');
+                var x,y, dx = 0, dy = 0;
                 for (var i=0; i<_w*_h; i++) {
                     x = Math.floor(i / _h);
                     y = i % _h;
-                    sx = (_ar[i].color * 36) + 1;
                     dx = _x0 + x*24;
                     dy = _y0 + y*24;
-                    ctx.drawImage(tiles, sx, 1, 34, 34, dx, dy, 20, 20);
-                    //ctx.fillStyle = (_ar[i].color > -1) ? _tileStyles[_ar[i].color] : "black";
-                    //ctx.fillRect(dx,dy, 20, 20);
+
+                    _ar[i].render(ctx, dx, dy);
                 }
             }
 
@@ -230,7 +208,7 @@ define(
                         // if we were looking at a candidate in the previous iteration,
                         //   check to see if it's long enough to count
                         if (matchCount >= 3) {
-                            console.log('Found a column of ', matchCount, ' berries at ', col, ',', y-1);
+                            //console.log('Found a column of ', matchCount, ' berries at ', col, ',', y-1);
                             _collectVert(col, y-matchCount, matchCount);
                         }
 
@@ -250,7 +228,7 @@ define(
                 // if we've fallen out of the loop and found a 3+-match at the end of the row,
                 //   collect it now
                 if (matchCount >= 3) {
-                    console.log('Found a column of ', matchCount, ' berries at ', col, ',', y-1);
+                    //console.log('Found a column of ', matchCount, ' berries at ', col, ',', y-1);
                     _collectVert(col, y-matchCount, matchCount);
                 }
             }
@@ -266,7 +244,7 @@ define(
                         // if we were looking at a candidate in the previous iteration,
                         //   check to see if it's long enough to count
                         if (matchCount >= 3) {
-                            console.log('Found a row of ', matchCount, ' berries at ', x-1, ',', row);
+                            //console.log('Found a row of ', matchCount, ' berries at ', x-1, ',', row);
                             _collectHoriz(x-matchCount, row, matchCount);
                         }
 
@@ -286,7 +264,7 @@ define(
                 // if we've fallen out of the loop and found a 3+-match at the end of the row,
                 //   collect it now
                 if (matchCount >= 3) {
-                    console.log('Found a row of ', matchCount, ' berries at ', x-1, ',', row);
+                    //console.log('Found a row of ', matchCount, ' berries at ', x-1, ',', row);
                     _collectHoriz(x-matchCount, row, matchCount);
                 }
             }
