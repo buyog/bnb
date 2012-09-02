@@ -30,18 +30,34 @@ define(
         ];*/
 
         function constructor(color) {
-            var _color = (color != undefined) ? color : Math.floor(Math.random()*7);
+            var _color = (color != undefined) ? color : Math.floor(Math.random()*7),
+                _animTime = 0,
+                _deleted = false;
 
             function _del() {
-                this.color = -1;    // TODO: add timed animation
+                _deleted = true;
+                _animTime = 5;
             }
 
             function _render(ctx, x, y) {
                 var sx = (_color * 36) + 1,
                     tiles = game.assets.getAsset('berries');
-                ctx.drawImage(tiles, sx, 1, 34, 34, x, y, 20, 20);
-                //ctx.fillStyle = (_color > -1) ? _tileStyles[_color] : "black";
-                //ctx.fillRect(x,y, 20, 20);
+
+                if (_animTime) {
+                    // figure out how to animate
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(x-_animTime,y-_animTime, 20+(_animTime*2), 20+(_animTime*2));
+                    if (_animTime--) {
+                        console.log('_deleted!');
+                        return false;
+                    }
+                } else {
+                    // no need to draw animated version; just draw normally
+                    ctx.drawImage(tiles, sx, 1, 34, 34, x, y, 20, 20);
+                    //ctx.fillStyle = (_color > -1) ? _tileStyles[_color] : "black";
+                    //ctx.fillRect(x,y, 20, 20);
+                }
+                return true;
             }
 
             function _str() {

@@ -167,7 +167,11 @@ define(
                     dx = _x0 + x*24;
                     dy = _y0 + y*24;
 
-                    _ar[i].render(ctx, dx, dy);
+                    if (_ar[i] && _ar[i].render(ctx, dx, dy)) {
+                        //
+                    } else {
+                        _ar[i] = null;
+                    };
                 }
             }
 
@@ -204,6 +208,7 @@ define(
 
                 for (y=0; y<_h; y++) {
                     cell = _ar[y0 + y];
+                    if (!cell) { continue; }
                     if (cell.color != ref) {
                         // if we were looking at a candidate in the previous iteration,
                         //   check to see if it's long enough to count
@@ -240,6 +245,7 @@ define(
                     index = (x * _h) + row;
 
                     cell = _ar[index];
+                    if (!cell) { continue; }
                     if (cell.color != ref) {
                         // if we were looking at a candidate in the previous iteration,
                         //   check to see if it's long enough to count
