@@ -14,6 +14,21 @@ html, body { background: #F7FFF7; margin: 0; padding: 0; }
     width: 320px;
 }
 
+
+/* fullscreen support
+  (per SitePoint: http://www.sitepoint.com/html5-full-screen-api/#fbid=OQ0UuJrwPGk)
+*/
+:-webkit-full-screen  { height: 100% }
+:-moz-full-screen     { height: 100% }
+:-ms-full-screen      { height: 100% }
+:-o-full-screen       { height: 100% }
+:full-screen          { height: 100% }
+
+
+
+
+
+
 .canvas, #overlay {
     position: absolute;
     top: 0;

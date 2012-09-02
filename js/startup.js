@@ -45,7 +45,7 @@ require(
                 canvas: document.querySelector('canvas'),
                 overlay: document.querySelector('#overlay')
             });
-        window.game = main;
+        window.game = main;     // for debug; eventually we'll wanna take this out
 
         // StateManager event callbacks
         function stateChange(data) {
@@ -72,6 +72,33 @@ require(
 
 
         // DOM event handlers
+
+
+        // fullscreen support (much simpler, if a little less robust, than the SitePoint version)
+        function requestFullscreen(elem) {
+            if (elem.requestFullScreen) {
+              elem.requestFullScreen();
+            } else if (elem.mozRequestFullScreen) {
+              elem.mozRequestFullScreen();
+            } else if (elem.webkitRequestFullScreen) {
+              elem.webkitRequestFullScreen();
+            }
+        }
+        function cancelFullscreen(elem) {
+            if (elem.cancelFullScreen) {
+              elem.cancelFullScreen();
+            } else if (elem.mozCancelFullScreen) {
+              elem.mozCancelFullScreen();
+            } else if (elem.webkitCancelFullScreen) {
+              elem.webkitCancelFullScreen();
+            }
+        }
+
+        var fsTarget = document.querySelector('canvas');
+        atto.addEvent(atto.byId('btnGoFS'), 'click', function() {
+            requestFullscreen(fsTarget);
+        });
+
 
     }
 );
