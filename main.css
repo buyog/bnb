@@ -24,7 +24,7 @@ html, body { background: #F7FFF7; margin: 0; padding: 0; }
 :-o-full-screen       { height: 100% }
 :full-screen          { height: 100% }
 
-
+button.hidden { display: none; }
 
 
 
