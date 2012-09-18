@@ -12,13 +12,15 @@ Done
 * tile swapping (code only, no user actions yet)
 * row/column shifting (code only)
 * basic tile-matching code (matches are immediately cleared)
-
+* user actions for swap
+* backfill cleared tiles with new ones
+* gravity (instant)
 
 ToDos
 -----
 
-* user actions (mouse / keyboard)
-* backfill cleared tiles with new ones
+* user actions for shift
+* gravity (animated)
 * tile animations
 * scoring
 * p1/p2 mechanics

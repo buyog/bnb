@@ -6,34 +6,9 @@
 /***************************/
 
 define(
-    ["atto/core", "Tile"],
-    function(atto, Tile) {
+    ["atto/core", "atto/event", "Tile"],
+    function(atto, AttoEvent, Tile) {
     "use strict";
-
-        function initGrid(w,h) {
-            var grid = [];
-            /*for (var x=0; x<w; x++) {
-                grid[x] = [];
-                for (var y=0; y<h; y++) {
-                    grid[x][y] = new Tile();
-                }
-            }*/
-            var x, len=w*h;
-            for (x=0; x<len; x++) {
-                grid.push( new Tile() );
-            }
-            return grid;
-        }
-
-        function printTileArray(ar) {
-            // dumps an array of tiles to a human-readable string
-            var s = [];
-            for (var i=0; i<ar.length; i++) {
-                s.push(ar[i].toString());
-            }
-
-            return s.join(',');
-        }
 
         function shuffle(array)
         { // from http://stackoverflow.com/questions/5150665/generate-random-list-of-unique-rows-columns-javascript
@@ -44,25 +19,172 @@ define(
         function constructor(width, height) {
             var _w  = width || 8,
                 _h  = height || 8,
-                _ar = initGrid(_w, _h),
-                _x0 = 67,
-                _y0 = 24;
+                _ar = [],
+                _x0 = 20,
+                _y0 = 90,
+                _x1 = 300,
+                _y1 = 370,
+                _selectedTile = null,
+                _events = {
+                    onTileRemove:  new AttoEvent('bnb.tile.onTileRemove'),
+                    onTileDropped: new AttoEvent('bnb.tile.onTileDropped')
+                };
 
-            function _tick() {
-                // TODO: check for new matches
+            // init tile set (can't do earlier, because the tiles need a reference to my events object)
+            _ar = _initGrid(_w, _h);
+
+            _events.onTileRemove.watch(function(context) {
+                //console.log('Tile removed:', _ar[context.index]);
+
+                //_ar[context.index] = new Tile(_events, context.index);
+                //console.log(_ar[context.index]);
+
+                _ar[context.index] = null;
+            });
+            _events.onTileDropped.watch(function(context) {
+                _ar[context.new_index] = _ar[context.old_index];
+                //_ar[context.old_index] = null;
+            });
+
+            function _initGrid(w,h) {
+                var x, len=w*h,
+                    grid = [];
+
+                for (x=0; x<len; x++) {
+                    grid.push( new Tile(_events, x) );
+                }
+                return grid;
+            }
+
+            function _get_click_target(coords) {
+                var _ix, _iy;
+                //console.log('coords:', coords.x, ',', coords.y);
+                if (coords && coords.x && coords.y) {
+                    if (coords.x >= _x0 && coords.x <= _x1 &&
+                        coords.y >= _y0 && coords.y <= _y1) {
+
+                        _ix = Math.floor((coords.x - _x0) / 36);
+                        _iy = Math.floor((coords.y - _y0) / 36);
+                        return {
+                            x: _ix,
+                            y: _iy,
+                            idx: (_ix * _h) + _iy
+                        }
+                    }
+                }
+
+                return null;
+            }
+
+            function _tick(game, inp) {
+                // handle any new inputs
+                var dx, dy, tgt = null;
+                if (inp) {
+                    switch (inp[0]) {
+                        case "mouse_click":
+                            tgt = _get_click_target(inp[1]);
+                            if (tgt !== null) {
+                                // handle as a potential tile click
+                                if (_selectedTile) {
+                                    _ar[tgt.idx].deselect();
+                                    _ar[_selectedTile.idx].deselect();
+
+                                    // swap
+                                    if (tgt.idx == _selectedTile.idx) {
+                                        //console.log('deselecting current tile');
+                                    } else {
+                                        dx = Math.abs(_selectedTile.x - tgt.x);
+                                        dy = Math.abs(_selectedTile.y - tgt.y);
+                                        if (dx == 1 && dy == 0) {
+                                            // horizontal swap, then check the row & both affected columns
+                                            _swap(_selectedTile.x, _selectedTile.y, tgt.x, tgt.y);
+                                            _checkRow(_selectedTile.y);
+                                            _checkCol(_selectedTile.x);
+                                            _checkCol(tgt.x);
+
+                                        } else if (dx == 0 && dy == 1) {
+                                            // vertical swap, then check the column & both affected rows
+                                            _swap(_selectedTile.x, _selectedTile.y, tgt.x, tgt.y);
+                                            _checkCol(_selectedTile.x);
+                                            _checkRow(_selectedTile.y);
+                                            _checkRow(tgt.y);
+
+                                        }
+                                    }
+
+                                    _selectedTile = null;
+
+                                } else {
+                                    // no tile selected
+
+                                    // DEBUG: gravity isn't working yet, so it's possible this is a NULL cell
+                                    if (_ar[tgt.idx]) {
+                                        // select this tile
+                                        if (!_ar[tgt.idx].isDeleted()) {
+                                            _ar[tgt.idx].select();
+                                            _selectedTile = tgt;
+                                        }
+                                    } else {
+                                        // no tile here; try to force the tiles above it to fall
+                                        _applyGravity();
+                                    }
+                                }
+
+                            } else {
+                                console.log("TODO: mouse event handling for outside the play area");
+                            }
+                            break;
+                        default:
+                            console.log("Unrecognized input type:", inp);
+                    }
+                }
+
+                // check for new matches
                 _eval();
 
-                // TODO: continue any ongoing animations
+                // continue any ongoing animations
+                for (var i=0; i<_w*_h; i++) {
+                    _ar[i] && _ar[i].tick(game);
+                }
+            }
 
+            function _applyGravity() {
+                var col_base_cell, y_off, current_cell, open_cells = [];
+
+                for (col_base_cell=(_w*_h)-1; col_base_cell > 0; col_base_cell-=_h) {
+                    // start at the bottom of the column and walk up each cell, applying gravity as we go
+                    for (y_off=0; y_off<_h; y_off++) {
+                        current_cell = col_base_cell - y_off;
+                        if (_ar[current_cell]) {
+                            if (_ar[current_cell].getState() != 0) {
+                                // there's already something falling in this column; don't apply new gravity until it's done
+                                open_cells = [];
+                                break;
+                            } else if (open_cells.length) {
+                                _ar[current_cell].dropTo(open_cells.pop());
+                                open_cells.unshift(current_cell);
+                            }
+                        } else {
+                            open_cells.unshift(current_cell);
+                        }
+                    }
+                    while (open_cells.length) {
+                        current_cell = open_cells.pop();
+                        _ar[current_cell] = new Tile(_events, current_cell);
+                    }
+                }
             }
 
             function _swap(x1,y1,x2,y2) {
-                var c1 = _ar[_h*x1 + y1],
-                    c2 = _ar[_h*x2 + y2],
+                var offset1 = _h*x1 + y1,
+                    offset2 = _h*x2 + y2,
                     tmp;
-                tmp = c1.color;
-                c1.color = c2.color;
-                c2.color = tmp;
+                tmp = _ar[offset1];
+                _ar[offset1] = _ar[offset2];
+                _ar[offset1].setIndex( offset1 );
+
+                _ar[offset2] = tmp;
+                _ar[offset2].setIndex( offset2 );
             }
 
 
@@ -107,6 +229,7 @@ define(
                 for (col=0; col<_w; col++) {
                     index = (col * _h) + row;
                     _ar[index] = buffer[col];
+                    _ar[index].setIndex( index );
                 }
                 //delete(buffer);
             }
@@ -155,23 +278,36 @@ define(
 
             function _reload() {
                 for (var i=0; i<_w*_h; i++) {
-                    _ar[i] = new Tile();
+                    _ar[i] = new Tile(_events, i);
                 }
             }
 
-            function _render(ctx) {
-                var x,y, dx = 0, dy = 0;
-                for (var i=0; i<_w*_h; i++) {
-                    x = Math.floor(i / _h);
-                    y = i % _h;
-                    dx = _x0 + x*24;
-                    dy = _y0 + y*24;
+            function _index_to_xy(idx) {
+                var _x = Math.floor(idx / _h),
+                    _y = idx % _h;
+                return {
+                    x:  _x,
+                    y:  _y,
+                    dx: _x0 + _x*36,
+                    dy: _y0 + _y*36
+                }
+            }
 
+            function _render(game, ctx) {
+                var coords = null;
+                for (var i=0; i<_w*_h; i++) {
+                    coords = _index_to_xy(i);
+
+                    // the logic here could be better
+                    _ar[i] && _ar[i].render(ctx, coords.dx, coords.dy);
+                    /*
                     if (_ar[i] && _ar[i].render(ctx, dx, dy)) {
                         //
                     } else {
-                        _ar[i] = null;
+                        //_ar[i] = null;
+                        console.log('hmm.', _ar[i]);
                     };
+                    */
                 }
             }
 
@@ -202,77 +338,80 @@ define(
             }
 
             function _checkCol(col) {
-                var y, cell, matchCount,
-                    ref = -1,
-                    y0 = col * _h;
+                var y, cell, matchCount, ref = -1, y0 = col * _h;
+
+                function _countMatchedTiles() {
+                    if (matchCount >= 3) {
+                        //console.log('Found a column of ', matchCount, ' berries at ', col, ',', y-1);
+                        _collectVert(col, y-matchCount, matchCount);
+                    }
+
+                    // reset match criteria
+                    ref = cell ? cell.color : -1;
+                    matchCount = 1;
+                }
 
                 for (y=0; y<_h; y++) {
                     cell = _ar[y0 + y];
-                    if (!cell) { continue; }
-                    if (cell.color != ref) {
-                        // if we were looking at a candidate in the previous iteration,
-                        //   check to see if it's long enough to count
-                        if (matchCount >= 3) {
-                            //console.log('Found a column of ', matchCount, ' berries at ', col, ',', y-1);
-                            _collectVert(col, y-matchCount, matchCount);
-                        }
-
-                        // reset match criteria
-                        ref = cell.color;
-                        matchCount = 1;
-
+                    if (!cell || cell.isDeleted()) {
+                        _countMatchedTiles();
                     } else {
+                        if (cell.color != ref) {
+                            // if we were looking at a candidate in the previous iteration,
+                            //   check to see if it's long enough to count
+                            _countMatchedTiles();
 
-                        if (cell.color == ref) {
-                            matchCount++;
+                        } else {
+
+                            if (cell.color == ref) {
+                                matchCount++;
+                            }
+
                         }
-
                     }
                 } // end for
 
-                // if we've fallen out of the loop and found a 3+-match at the end of the row,
-                //   collect it now
-                if (matchCount >= 3) {
-                    //console.log('Found a column of ', matchCount, ' berries at ', col, ',', y-1);
-                    _collectVert(col, y-matchCount, matchCount);
-                }
+                // if we've fallen out of the loop and found a 3+-match at the end of the row, collect it now
+                _countMatchedTiles();
             }
 
             function _checkRow(row) {
                 var x, cell, index, matchCount, ref = -1;
 
+                function _countMatchedTiles() {
+                    if (matchCount >= 3) {
+                        //console.log('Found a row of ', matchCount, ' berries at ', x-1, ',', row);
+                        _collectHoriz(x-matchCount, row, matchCount);
+                    }
+
+                    // reset match criteria
+                    ref = cell ? cell.color : -1;
+                    matchCount = 1;
+                }
+
                 for (x=0; x<_w; x++) {
                     index = (x * _h) + row;
-
                     cell = _ar[index];
-                    if (!cell) { continue; }
-                    if (cell.color != ref) {
-                        // if we were looking at a candidate in the previous iteration,
-                        //   check to see if it's long enough to count
-                        if (matchCount >= 3) {
-                            //console.log('Found a row of ', matchCount, ' berries at ', x-1, ',', row);
-                            _collectHoriz(x-matchCount, row, matchCount);
-                        }
-
-                        // reset match criteria
-                        ref = cell.color;
-                        matchCount = 1;
-
+                    if (!cell || cell.isDeleted()) {
+                        _countMatchedTiles();
                     } else {
+                        if (cell.color != ref) {
+                            // if we were looking at a candidate in the previous iteration,
+                            //   check to see if it's long enough to count
+                            _countMatchedTiles();
 
-                        if (cell.color == ref) {
-                            matchCount++;
+                        } else {
+
+                            if (cell.color == ref) {
+                                matchCount++;
+                            }
+
                         }
-
                     }
                 } // end for
 
-                // if we've fallen out of the loop and found a 3+-match at the end of the row,
-                //   collect it now
-                if (matchCount >= 3) {
-                    //console.log('Found a row of ', matchCount, ' berries at ', x-1, ',', row);
-                    _collectHoriz(x-matchCount, row, matchCount);
-                }
+                // if we've fallen out of the loop and found a 3+-match at the end of the row, collect it now
+                _countMatchedTiles();
             }
 
             function _eval() {
@@ -319,6 +458,7 @@ define(
                 //   if we use two different match counts and refs
 
 
+                _applyGravity();
             }
 
             return {
@@ -331,8 +471,7 @@ define(
                 reload : _reload,
                 swap   : _swap,
                 shift  : _shift,
-                align  : _align,
-                eval   : _eval
+                align  : _align
             }
 
         } // end of constructor
