@@ -23,6 +23,14 @@ define(
                 _inputBuffer = [],
                 _tiles = new TileSet(8,8),
                 _currentState = 0,
+                _states = {
+                    'loading':0,
+                    'title':1,
+                    'p1input':2,
+                    'p1scoring':3,
+                    'p2input':4,
+                    'p2scoring':5
+                },
                 _p1score = 0,
                 _p2score = 0,
                 _activePlayer;
@@ -46,11 +54,11 @@ define(
             function handleMouseDown(e) {
                 var p = _getPos(e);
                 switch (_currentState) {
-                    case 0:     // loading
+                    case _states.loading:
                         // TODO: draw a "pond ripple" or something if clicked while loading
                         break;
 
-                    case 1:     // title
+                    case _states.title:
                         // highlight any clicked menu item
                         if (_inRect(p, 0, 330, 320, 370)) {
                             // "TAP OR CLICK..."
@@ -59,7 +67,7 @@ define(
                         }
                         break;
 
-                    case 2:     // playing
+                    case _states.p1input:
                         // TODO: check if click is on any virtual buttons, and if so, activate that button
                         if (_inRect(p, 60, 50, 120, 75)) {
                             // P1 score clicked
@@ -80,10 +88,10 @@ define(
             function handleMouseClick(e) {
                 var p = _getPos(e);
                 switch (_currentState) {
-                    case 0:     // loading
+                    case _states.loading:
                         break;
 
-                    case 1:     // title
+                    case _states.title:
                         // determine which menu item is clicked
                         if (_inRect(p, 0, 330, 320, 370)) {
                             // "TAP OR CLICK..."
@@ -96,21 +104,26 @@ define(
                         }
                         break;
 
-                    case 2:     // playing
+                    case _states.p1input:
                         // if click is in tile backet, buffer & hand it off to the tileset's update call
                         if (_inRect(p, 20,90, 300,370)) {
                             _bufferInput(_inputs.CLICK, p);
+
                         } else if (_inRect(p, 28,390, 108,470)) {
+                            // panic/shuffle button
                             _context.fillStyle = "rgba(128,128,128,0.2)";
                             _context.fillRect(28,390, 80,80);
                             _tiles.panic();
 
                         } else if (_inRect(p, 210, 390, 290,470)) {
+                            // reset/restart button
                             _context.fillStyle = "rgba(255,64,64,0.2)";
                             _context.fillRect(210,390, 80,80);
                             _tiles.reload();
 
                         } else {
+                            // pond ripple
+
                             console.log('click:', p.x, p.y);
                             _context.beginPath();
                             _context.arc(p.x, p.y, 15, 0, Math.PI*2, true);
@@ -168,17 +181,16 @@ define(
                 if (_currentState != n) {
                     _currentState = n;
                     switch (n) {
-                        case 0:     // loading
+                        case _states.loading:
                             _context.fillStyle = bgColor;
                             _context.fillRect(0,0, _attrs.width, _attrs.height);
-
                             _context.font         = bigFont;
                             _context.textBaseline = 'top';
                             _context.fillStyle = textColor;
                             _context.fillText('Loading...', 25, 25);
                             break;
 
-                        case 1:     // title
+                        case _states.title:
                             img = _assets.getAsset('title');
 
                             _context.fillStyle = bgColor;
@@ -203,7 +215,7 @@ define(
                             }
                             break;
 
-                        case 2:     // playing
+                        case _states.p1input:
                             _context.fillStyle = bgColor;
                             _context.fillRect(0,0, _attrs.width, _attrs.height);
 
@@ -221,12 +233,11 @@ define(
                             _context.font = bigFont;
                             _context.textBaseline = 'top';
 
-                            // reload button
+                            // panic/shuffle button
                             _context.fillStyle = "pink";
                             _context.fillRect(28,390, 80,80);
                             _context.fillStyle = textColor;
                             _context.fillText('#', 30,366);
-
 
                             // reload button
                             _context.fillStyle = "brown";
@@ -248,15 +259,15 @@ define(
                --------------------- */
             function _tick() {
                 switch (_currentState) {
-                    case 0:     // loading
+                    case _states.loading:
                         if (_assets.ready())
                             _changeState(1);
                         break;
 
-                    case 1:     // title
+                    case _states.title:
                         break;
 
-                    case 2:     // playing
+                    case _states.p1input:
                         _tiles.tick(this, _inputBuffer.pop());
                         break;
 
@@ -268,15 +279,15 @@ define(
             function _draw() {
                 var img = null;
                 switch (_currentState) {
-                    case 0:     // loading
+                    case _states.loading:
                         // TBD: animate a "loading..." marque
                         break;
 
-                    case 1:     // title
+                    case _states.title:
                         // TBD: flash the "press any key" marquee
                         break;
 
-                    case 2:     // playing
+                    case _states.p1input:
                         img = _assets.getAsset('board');
                         _context.drawImage(img, 10, 80, 300, 300);
 
