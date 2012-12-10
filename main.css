@@ -1,5 +1,8 @@
 html, body { background: #F7FFF7; margin: 0; padding: 0; }
-* { -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; }
+* {
+    -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box;
+    -webkit-user-select: none;
+}
 .main {
     padding: 0; margin: 0 auto;
     width: 320px;

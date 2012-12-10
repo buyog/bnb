@@ -6,7 +6,7 @@
 /***************************/
 
 define(
-    ["atto/core", "atto/event", "tangle/AssetCache", "TileSet"],
+    ["atto/core", "atto/event", "tangle/assetCache", "TileSet"],
     function(atto, AttoEvent, AssetCache, TileSet) {
     "use strict";
         function constructor(args) {

@@ -6,8 +6,8 @@
 /***************************/
 
 define(
-    ["atto/core", "atto/event", "Tile"],
-    function(atto, AttoEvent, Tile) {
+    ["atto/core", "atto/event", "Tile", "atto/pubsub"],
+    function(atto, AttoEvent, Tile, pubsub) {
     "use strict";
 
         function shuffle(array)
@@ -26,24 +26,43 @@ define(
                 _y1 = 370,
                 _selectedTile = null,
                 _events = {
-                    onTileRemove:  new AttoEvent('bnb.tile.onTileRemove'),
                     onTileDropped: new AttoEvent('bnb.tile.onTileDropped')
                 };
 
             // init tile set (can't do earlier, because the tiles need a reference to my events object)
             _ar = _initGrid(_w, _h);
 
-            _events.onTileRemove.watch(function(context) {
-                //console.log('Tile removed:', _ar[context.index]);
+            pubsub.subscribe('bnb.tile.onTileRemove', function(topic, context) {
+                var t = _ar[context.index];
+                if (t) {
+                    console.log(atto.supplant('tile removed: i:{i}, color:{c}', {i:context.index, c:t.color}));
+                    //_ar[context.index] = new Tile(_events, context.index);
+                    //console.log(_ar[context.index]);
 
-                //_ar[context.index] = new Tile(_events, context.index);
-                //console.log(_ar[context.index]);
-
-                _ar[context.index] = null;
+                    _ar[context.index] = null;
+                } else {
+                    //console.log(atto.supplant('tile removed: i:{i} (already null)', {i:context.index}));
+                }
             });
             _events.onTileDropped.watch(function(context) {
-                _ar[context.new_index] = _ar[context.old_index];
-                //_ar[context.old_index] = null;
+                var t = _ar[context.old_index];
+                if (t) {
+                    var args = {o:context.old_index, n:context.new_index, c:t.color}
+                    console.log(atto.supplant('[ev] tile dropped: old_index:{o}, new_index:{n}; color::{c}', args));
+
+                    //_ar[context.new_index] = _ar[context.old_index];
+                    //_ar[context.old_index] = null;
+                }
+            });
+            pubsub.subscribe('bnb.tile.onTileDropped', function(topic, context) {
+                var t = _ar[context.old_index];
+                if (t) {
+                    var args = {o:context.old_index, n:context.new_index, c:t.color}
+                    console.log(atto.supplant('[ps] tile dropped: old_index:{o}, new_index:{n}; color::{c}', args));
+
+                    _ar[context.new_index] = _ar[context.old_index];
+                    _ar[context.old_index] = new Tile(_events, context.old_index);
+                }
             });
 
             function _initGrid(w,h) {

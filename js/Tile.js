@@ -6,8 +6,8 @@
 /***************************/
 
 define(
-    [],
-    function() {
+    ["atto/pubsub"],
+    function(pubsub) {
     "use strict";
         var _tileStyles = [
             'red',
@@ -65,11 +65,13 @@ define(
                         _yOffset = -24;
                         _i = newIndex;
                         _events.onTileDropped.dispatch({old_index:oldIndex,new_index:newIndex});
+                        pubsub.publish('bnb.tile.onTileDropped', {old_index:oldIndex,new_index:newIndex});
 
                     } else {
                         // for now, short-circuit the drop anim to immediately move to the new cell
                         _i = newIndex;
                         _events.onTileDropped.dispatch({old_index:oldIndex,new_index:newIndex});
+                        pubsub.publish('bnb.tile.onTileDropped', {old_index:oldIndex,new_index:newIndex});
                     }
 
                 } else {
@@ -133,7 +135,7 @@ define(
 
                         } else if (_animTime == 0) {
                             _animTime = -1;
-                            _events.onTileRemove.dispatch({index:_i});
+                            pubsub.publish('bnb.tile.onTileRemove', {index:_i});
                         } else {
                             _animTime = 0;
                         }
